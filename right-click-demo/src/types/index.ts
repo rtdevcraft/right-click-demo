@@ -1,4 +1,5 @@
 import React from 'react'
+import type { RefObject } from 'react'
 
 /**
  * Defines the structure of a single task object.
@@ -56,10 +57,11 @@ export type ContextMenuState = {
 /**
  * Defines the props for the ContextMenu component.
  */
-export type ContextMenuProps = {
+export type ContextMenuProps<T> = {
   anchorPosition: { x: number; y: number } | null
   onClose: () => void
   itemType: string
-  itemData: ContextMenuItemData
-  onAction: (action: string, itemData: ContextMenuItemData) => void
+  itemData: T // Now T is recognized as the generic parameter
+  onAction: (action: string, itemData: T) => void
+  triggerElRef: RefObject<HTMLElement | null>
 }

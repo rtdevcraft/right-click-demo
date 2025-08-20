@@ -1,6 +1,8 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
-  Menu,
+  Box,
+  Paper,
+  MenuList,
   MenuItem,
   ListItemIcon,
   ListItemText,
@@ -21,153 +23,183 @@ import {
 } from '@mui/icons-material'
 import type { ContextMenuProps, MenuItemType } from '@/types'
 
-// Define menu item configurations outside the component to prevent re-creation
-const menuConfig = {
-  common: [
-    { icon: <Edit fontSize='small' />, text: 'Edit', action: 'edit' },
-    {
-      icon: <ContentCopy fontSize='small' />,
-      text: 'Duplicate',
-      action: 'duplicate',
-    },
-    { icon: <Share fontSize='small' />, text: 'Share', action: 'share' },
-  ],
-  task: [
-    {
-      icon: <CheckCircle fontSize='small' />,
-      text: 'Mark Complete',
-      action: 'complete',
-    },
-    {
-      icon: <Person fontSize='small' />,
-      text: 'Assign to...',
-      action: 'assign',
-    },
-    {
-      icon: <Schedule fontSize='small' />,
-      text: 'Set Due Date',
-      action: 'due-date',
-    },
-    {
-      icon: <Flag fontSize='small' />,
-      text: 'Set Priority',
-      action: 'priority',
-    },
-    {
-      icon: <Star fontSize='small' />,
-      text: 'Add to Favorites',
-      action: 'favorite',
-    },
-  ],
-  container: [
-    {
-      icon: <Assignment fontSize='small' />,
-      text: 'Create Task',
-      action: 'create-task',
-    },
-    {
-      icon: <Archive fontSize='small' />,
-      text: 'Archive All',
-      action: 'archive-all',
-    },
-  ],
-  destructive: [
-    {
-      icon: <Archive fontSize='small' />,
-      text: 'Archive',
-      action: 'archive',
-    },
-    {
-      icon: <Delete fontSize='small' />,
-      text: 'Delete',
-      action: 'delete',
-      destructive: true,
-    },
-  ],
-}
-
-const getMenuItems = (itemType: string): (MenuItemType | 'divider')[] => {
-  if (itemType === 'task') {
-    return [
-      ...menuConfig.common,
-      'divider',
-      ...menuConfig.task,
-      'divider',
-      ...menuConfig.destructive,
-    ]
-  }
-  if (itemType === 'container') {
-    return [...menuConfig.common, 'divider', ...menuConfig.container]
-  }
-  return menuConfig.common
-}
-
-export const ContextMenu: React.FC<ContextMenuProps> = ({
+export const ContextMenu = <T,>({
   anchorPosition,
   onClose,
   itemType,
   itemData,
   onAction,
-}) => {
-  const menuItems = useMemo(() => getMenuItems(itemType), [itemType])
+  triggerElRef,
+}: ContextMenuProps<T>) => {
+  const menuRef = useRef<HTMLUListElement>(null)
 
-  const handleAction = (action: string) => {
-    onAction(action, itemData)
-    onClose()
+  useEffect(() => {
+    const triggerElement = triggerElRef.current
+
+    const firstItem =
+      menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')
+    firstItem?.focus()
+
+    return () => {
+      triggerElement?.focus()
+    }
+  }, [anchorPosition, triggerElRef])
+
+  const getMenuItems = (): (MenuItemType | 'divider')[] => {
+    const commonItems: MenuItemType[] = [
+      { icon: <Edit fontSize='small' />, text: 'Edit', action: 'edit' },
+      {
+        icon: <ContentCopy fontSize='small' />,
+        text: 'Duplicate',
+        action: 'duplicate',
+      },
+      { icon: <Share fontSize='small' />, text: 'Share', action: 'share' },
+    ]
+    const taskItems: MenuItemType[] = [
+      {
+        icon: <CheckCircle fontSize='small' />,
+        text: 'Mark Complete',
+        action: 'complete',
+      },
+      {
+        icon: <Person fontSize='small' />,
+        text: 'Assign to...',
+        action: 'assign',
+      },
+      {
+        icon: <Schedule fontSize='small' />,
+        text: 'Set Due Date',
+        action: 'due-date',
+      },
+      {
+        icon: <Flag fontSize='small' />,
+        text: 'Set Priority',
+        action: 'priority',
+      },
+      {
+        icon: <Star fontSize='small' />,
+        text: 'Add to Favorites',
+        action: 'favorite',
+      },
+    ]
+    const containerItems: MenuItemType[] = [
+      {
+        icon: <Assignment fontSize='small' />,
+        text: 'Create Task',
+        action: 'create-task',
+      },
+      {
+        icon: <Archive fontSize='small' />,
+        text: 'Archive All',
+        action: 'archive-all',
+      },
+    ]
+    const destructiveItems: MenuItemType[] = [
+      {
+        icon: <Archive fontSize='small' />,
+        text: 'Archive',
+        action: 'archive',
+      },
+      {
+        icon: <Delete fontSize='small' />,
+        text: 'Delete',
+        action: 'delete',
+        destructive: true,
+      },
+    ]
+
+    if (itemType === 'task') {
+      return [
+        ...commonItems,
+        'divider',
+        ...taskItems,
+        'divider',
+        ...destructiveItems,
+      ]
+    } else if (itemType === 'container') {
+      return [...commonItems, 'divider', ...containerItems]
+    }
+    return commonItems
+  }
+
+  const menuItems = getMenuItems()
+
+  if (!anchorPosition) {
+    return null
   }
 
   return (
-    <Menu
-      open={anchorPosition !== null}
-      onClose={onClose}
-      anchorReference='anchorPosition'
-      anchorPosition={
-        anchorPosition
-          ? { top: anchorPosition.y, left: anchorPosition.x }
-          : undefined
-      }
-      slotProps={{
-        paper: {
-          elevation: 12,
-          sx: {
-            minWidth: 220,
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            p: 0.5,
-          },
-        },
-      }}
-    >
-      {menuItems.map((item, index) => {
-        if (item === 'divider') {
-          return <Divider key={`divider-${index}`} sx={{ my: 0.5 }} />
-        }
-        return (
-          <MenuItem
-            key={item.action}
-            onClick={() => handleAction(item.action)}
-            sx={{
-              borderRadius: 1,
-              mx: 0.5,
-              color: item.destructive ? 'error.main' : 'text.primary',
-              '&:hover': {
-                bgcolor: item.destructive
-                  ? 'rgba(239, 68, 68, 0.1)'
-                  : 'action.hover',
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText
-              primary={item.text}
-              primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
-            />
-          </MenuItem>
-        )
-      })}
-    </Menu>
+    <>
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1200,
+        }}
+        onClick={onClose}
+      />
+      <Paper
+        elevation={12}
+        sx={{
+          position: 'fixed',
+          top: anchorPosition.y,
+          left: anchorPosition.x,
+          zIndex: 1300,
+          minWidth: 220,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          py: 1,
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <MenuList ref={menuRef} dense sx={{ py: 0.5 }}>
+          {menuItems.map((item, index) => {
+            if (typeof item === 'string' && item === 'divider') {
+              return <Divider key={index} sx={{ my: 0.5 }} />
+            }
+
+            if (typeof item === 'object') {
+              return (
+                <MenuItem
+                  key={item.action}
+                  onClick={() => onAction(item.action, itemData)}
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    borderRadius: 1,
+                    mx: 1,
+                    color: item.destructive ? 'error.main' : 'text.primary',
+                    '&:hover': {
+                      bgcolor: item.destructive
+                        ? 'rgba(239, 68, 68, 0.1)'
+                        : 'action.hover',
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      color: 'inherit',
+                      minWidth: 36,
+                      '& .MuiSvgIcon-root': { fontSize: 18 },
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
+                  />
+                </MenuItem>
+              )
+            }
+            return null
+          })}
+        </MenuList>
+      </Paper>
+    </>
   )
 }

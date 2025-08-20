@@ -37,11 +37,11 @@ const getStatusColor = (status: Task['status']) => {
   }
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({
+export const TaskCard = ({
   task,
   onContextMenu,
   onToggleComplete,
-}) => {
+}: TaskCardProps) => {
   const handleRightClick = (e: React.MouseEvent) => {
     e.preventDefault()
     onContextMenu(e, 'task', task)
@@ -49,7 +49,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   return (
     <Paper
-      data-id='task-card'
+      role='article'
+      aria-label={`Task: ${task.title}`}
       elevation={1}
       onContextMenu={handleRightClick}
       sx={{
@@ -164,6 +165,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </Box>
 
         <IconButton
+          aria-label='More options'
           size='small'
           onClick={(e) => {
             e.stopPropagation()

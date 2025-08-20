@@ -8,11 +8,7 @@ type EditTaskFormProps = {
   onCancel: () => void
 }
 
-export const EditTaskForm: React.FC<EditTaskFormProps> = ({
-  task,
-  onSave,
-  onCancel,
-}) => {
+export const EditTaskForm = ({ task, onSave, onCancel }: EditTaskFormProps) => {
   const [title, setTitle] = useState(task.title)
 
   const handleSave = () => {
@@ -53,12 +49,7 @@ export const EditTaskForm: React.FC<EditTaskFormProps> = ({
           <Button onClick={onCancel} variant='text' color='secondary'>
             Cancel
           </Button>
-          <Button
-            type='submit'
-            onClick={handleSave}
-            variant='contained'
-            color='primary'
-          >
+          <Button type='submit' variant='contained' color='primary'>
             Save
           </Button>
         </Box>
