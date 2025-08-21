@@ -20,7 +20,7 @@
     ],
     "baseUrl": ".",
 
-    "types": ["jest", "@testing-library/jest-dom"],
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "paths": {
       "@/*": ["./src/*"]
     }
@@ -30,7 +30,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "jest.setup.ts"
   ],
   "exclude": ["node_modules"]
 }

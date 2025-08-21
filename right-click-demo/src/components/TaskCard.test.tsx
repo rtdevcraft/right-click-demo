@@ -1,5 +1,4 @@
-import React from 'react'
-import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TaskCard } from './TaskCard'
@@ -17,8 +16,8 @@ const mockTask: Task = {
 }
 
 describe('TaskCard', () => {
-  const onContextMenu = jest.fn()
-  const onToggleComplete = jest.fn()
+  const onContextMenu = vi.fn()
+  const onToggleComplete = vi.fn()
   const user = userEvent.setup()
 
   beforeEach(() => {

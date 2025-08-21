@@ -1,81 +1,71 @@
-import React, { createRef } from 'react'
-import { describe, it, expect, beforeEach, jest } from '@jest/globals'
-import { render, screen } from '@testing-library/react'
+import React from 'react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ContextMenu } from './ContextMenu'
-import type { Task } from '@/types'
+import type { Task, ContextMenuProps } from '@/types'
 
+// Mock data for the task
 const mockTask: Task = {
   id: 1,
-  title: 'Mock Task',
-  description: '',
+  title: 'Test Task',
+  description: 'A test description',
   completed: false,
-  priority: 'low',
+  priority: 'medium',
   status: 'To Do',
   assignee: 'Jane Doe',
-  dueDate: '2025-01-01',
+  dueDate: '2025-12-31',
 }
 
-const mockAnchorPosition = { x: 100, y: 100 }
-const triggerElRef = createRef<HTMLDivElement>()
+// Reusable mock props
+const mockProps: ContextMenuProps<Task> = {
+  anchorPosition: { x: 100, y: 100 },
+  onClose: vi.fn(),
+  onAction: vi.fn(),
+  itemType: 'task',
+  itemData: mockTask,
+  triggerElRef: { current: document.createElement('button') },
+}
 
 describe('ContextMenu', () => {
-  const onClose = jest.fn()
-  const onAction = jest.fn()
   const user = userEvent.setup()
+  const { onAction, onClose } = mockProps
 
+  // Clear mocks before each test to ensure a clean slate
   beforeEach(() => {
-    onClose.mockClear()
-    onAction.mockClear()
+    vi.clearAllMocks()
+    document.body.appendChild(mockProps.triggerElRef.current!)
+    mockProps.triggerElRef.current!.focus()
   })
 
-  it('does not render when anchorPosition is null', () => {
-    render(
-      <ContextMenu<Task>
-        anchorPosition={null}
-        onClose={onClose}
-        itemType='task'
-        itemData={mockTask}
-        onAction={onAction}
-        triggerElRef={triggerElRef}
-      />
+  it('renders null when anchorPosition is not provided', () => {
+    const { container } = render(
+      <ContextMenu {...mockProps} anchorPosition={null} />
     )
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(container).toBeEmptyDOMElement()
   })
 
-  it('renders the correct menu items for itemType "task"', () => {
-    render(
-      <ContextMenu<Task>
-        anchorPosition={mockAnchorPosition}
-        onClose={onClose}
-        itemType='task'
-        itemData={mockTask}
-        onAction={onAction}
-        triggerElRef={triggerElRef}
-      />
-    )
-
-    expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument()
+  it('renders the correct menu items for a task', () => {
+    render(<ContextMenu {...mockProps} />)
+    expect(screen.getByRole('menuitem', { name: /edit/i })).toBeInTheDocument()
     expect(
-      screen.getByRole('menuitem', { name: 'Mark Complete' })
+      screen.getByRole('menuitem', { name: /mark complete/i })
     ).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('menuitem', { name: /delete/i })
+    ).toBeInTheDocument()
+  })
+
+  it('calls onClose when the backdrop is clicked', async () => {
+    render(<ContextMenu {...mockProps} />)
+    await user.click(document.body)
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 
   it('calls onAction and onClose when a menu item is clicked', async () => {
-    render(
-      <ContextMenu<Task>
-        anchorPosition={mockAnchorPosition}
-        onClose={onClose}
-        itemType='task'
-        itemData={mockTask}
-        onAction={onAction}
-        triggerElRef={triggerElRef}
-      />
-    )
-
-    const editButton = screen.getByRole('menuitem', { name: 'Edit' })
-    await user.click(editButton)
+    render(<ContextMenu {...mockProps} />)
+    const editMenuItem = screen.getByRole('menuitem', { name: /edit/i })
+    await user.click(editMenuItem)
 
     expect(onAction).toHaveBeenCalledTimes(1)
     expect(onAction).toHaveBeenCalledWith('edit', mockTask)
@@ -83,22 +73,27 @@ describe('ContextMenu', () => {
   })
 
   it('applies destructive styling to the delete item', () => {
-    render(
-      <ContextMenu<Task>
-        anchorPosition={mockAnchorPosition}
-        onClose={onClose}
-        itemType='task'
-        itemData={mockTask}
-        onAction={onAction}
-        triggerElRef={triggerElRef}
-      />
-    )
+    render(<ContextMenu {...mockProps} />)
+    const deleteMenuItem = screen.getByRole('menuitem', { name: /delete/i })
+    expect(deleteMenuItem).toHaveStyle({ color: 'rgb(211, 47, 47)' })
+  })
 
-    const deleteMenuItem = screen.getByRole('menuitem', { name: 'Delete' })
-    // This robustly checks that MUI applied its 'error' color class,
-    // rather than checking a specific, brittle RGB value.
-    expect(deleteMenuItem.querySelector('.MuiListItemText-root')).toHaveClass(
-      'Mui-error'
-    )
+  it('sets focus on the first menu item on render', async () => {
+    render(<ContextMenu {...mockProps} />)
+    const firstItem = screen.getByRole('menuitem', { name: /edit/i })
+    await waitFor(() => {
+      expect(firstItem).toHaveFocus()
+    })
+  })
+
+  it('returns focus to the trigger element on close', async () => {
+    const { unmount } = render(<ContextMenu {...mockProps} />)
+    expect(mockProps.triggerElRef.current).toHaveFocus()
+    const firstItem = screen.getByRole('menuitem', { name: /edit/i })
+    await waitFor(() => {
+      expect(firstItem).toHaveFocus()
+    })
+    unmount()
+    expect(mockProps.triggerElRef.current).toHaveFocus()
   })
 })

@@ -1,5 +1,4 @@
-import React from 'react'
-import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EditTaskForm } from './EditTaskForm'
@@ -17,8 +16,8 @@ const mockTask: Task = {
 }
 
 describe('EditTaskForm', () => {
-  const onSave = jest.fn()
-  const onCancel = jest.fn()
+  const onSave = vi.fn()
+  const onCancel = vi.fn()
   const user = userEvent.setup()
 
   beforeEach(() => {
